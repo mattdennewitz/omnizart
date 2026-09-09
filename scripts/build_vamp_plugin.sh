@@ -16,6 +16,12 @@ set -e
 # Usage:
 #     ./scripts/build_vamp_plugin.sh            # build for the current architecture
 #     ./scripts/build_vamp_plugin.sh arm64      # build a specific macOS architecture
+#     ./scripts/build_vamp_plugin.sh --installed  # patch the installed omnizart
+#
+# By default the rebuilt plugin is written into this checkout. Pass --installed
+# to write it into the omnizart package of the active environment instead, which
+# is what you want after `pip install omnizart`, since the plugin is loaded from
+# wherever the package lives rather than from a source tree.
 #
 # Requirements:
 #     macOS  brew install vamp-plugin-sdk boost
@@ -26,11 +32,31 @@ NNLS_REPO="https://github.com/c4dm/nnls-chroma.git"
 NNLS_COMMIT="4c5f214a75cb354f8d8c933e161377c5b4d83713"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VAMP_DIR="$REPO_ROOT/omnizart/resource/vamp"
 WORK_DIR="$(mktemp -d)"
 trap 'rm -rf "$WORK_DIR"' EXIT
 
-ARCH="${1:-$(uname -m)}"
+ARCH=""
+TARGET_INSTALLED=false
+for arg in "$@"; do
+    case "$arg" in
+        --installed) TARGET_INSTALLED=true ;;
+        -*) echo "Unknown option: $arg" >&2; exit 1 ;;
+        *) ARCH="$arg" ;;
+    esac
+done
+ARCH="${ARCH:-$(uname -m)}"
+
+if [ "$TARGET_INSTALLED" = true ]; then
+    # Resolve the plugin directory of the omnizart on the current PYTHONPATH.
+    VAMP_DIR="$(python -c 'import os, omnizart; print(os.path.join(os.path.dirname(omnizart.__file__), "resource", "vamp"))' 2>/dev/null)"
+    if [ -z "$VAMP_DIR" ] || [ ! -d "$VAMP_DIR" ]; then
+        echo "Could not locate an installed omnizart. Activate the environment first." >&2
+        exit 1
+    fi
+else
+    VAMP_DIR="$REPO_ROOT/omnizart/resource/vamp"
+fi
+echo "Target: $VAMP_DIR"
 
 
 fetch_source() {
