@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+### Build & Dependencies
+- Added `scripts/build_vamp_plugin.sh`, which rebuilds the bundled NNLS Chroma Vamp plugin from its pinned upstream source (`c4dm/nnls-chroma`, GPL-2.0). Its `--installed` mode patches the omnizart package of the active environment, which is what a `pip install` needs. No prebuilt plugin is vendored.
+
+### Bugs
+- `omnizart.feature.chroma` now explains a failed Vamp plugin load, naming the Vamp path and host platform, instead of surfacing vampyhost's bare `TypeError`.
+
+### Documentation
+- Replaced the blanket "incompatible for ARM-based MacOS" note with what actually works: all six applications run natively on Apple Silicon once the Vamp plugin is rebuilt.
+- Documented the working installation sequence for macOS on Apple Silicon, and why `pip install omnizart` fails without `--no-build-isolation`.
+
+---
+
 ## 0.6.3 - 2026-05-31
 
 **Source separation and CLI speed optimization release.** Includes native in-code `sherpa-onnx` source separation backend integration and CLI startup optimization.
